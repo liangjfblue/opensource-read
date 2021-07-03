@@ -767,7 +767,7 @@ func (s *Server) Serve(lis net.Listener) error {
 	var tempDelay time.Duration // how long to sleep on accept failure
 
 	for {
-		// 接收客户端链接
+		// 接收客户端链接, 得到原始的客户端conn
 		rawConn, err := lis.Accept()
 		if err != nil {
 			if ne, ok := err.(interface {
@@ -814,6 +814,7 @@ func (s *Server) Serve(lis net.Listener) error {
 		go func() {
 			// 客户端链接处理
 			s.handleRawConn(rawConn)
+			// 标记一个客户端完成, 用于标记服务有客户端链接处理, 实现优雅退出
 			s.serveWG.Done()
 		}()
 	}
@@ -829,7 +830,7 @@ func (s *Server) handleRawConn(rawConn net.Conn) {
 	}
 	// 设置超时时间
 	rawConn.SetDeadline(time.Now().Add(s.opts.connectionTimeout))
-	// 通信握手
+	// 通信握手, 默认http2.0/TLS
 	conn, authInfo, err := s.useTransportAuthenticator(rawConn)
 	if err != nil {
 		// ErrConnDispatched means that the connection was dispatched away from
@@ -846,7 +847,7 @@ func (s *Server) handleRawConn(rawConn net.Conn) {
 	}
 
 	// Finish handshaking (HTTP2)
-	// 升级为http2
+	// 升级为http2, 创建传输st
 	st := s.newHTTP2Transport(conn, authInfo)
 	if st == nil {
 		return
@@ -905,6 +906,7 @@ func (s *Server) serveStreams(st transport.ServerTransport) {
 	st.HandleStreams(func(stream *transport.Stream) {
 		wg.Add(1)
 		if s.opts.numServerWorkers > 0 {
+			// 并发处理流?
 			data := &serverWorkerData{st: st, wg: &wg, stream: stream}
 			select {
 			case s.serverWorkerChannels[atomic.AddUint32(&roundRobinCounter, 1)%s.opts.numServerWorkers] <- data:
