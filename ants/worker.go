@@ -30,11 +30,14 @@ import (
 // goWorker is the actual executor who runs the tasks,
 // it starts a goroutine that accepts tasks and
 // performs function calls.
+// 工作者
 type goWorker struct {
 	// pool who owns this worker.
+	// 多pool时，worker的归属
 	pool *Pool
 
 	// task is a job should be done.
+	// 任务队列
 	task chan func()
 
 	// recycleTime will be update when putting a worker back into queue.
@@ -43,16 +46,26 @@ type goWorker struct {
 
 // run starts a goroutine to repeat the process
 // that performs the function calls.
+// 1.自增运行worker
+// 2.封装执行后的操作
+//	2.1.recovery+回收pool+钩子+打印堆栈
+// 3.执行任务
+// 4.唤醒阻塞任务
 func (w *goWorker) run() {
+	// 增加运行worker数
 	w.pool.incRunning()
 	go func() {
 		defer func() {
+			// 减去运行worker数
 			w.pool.decRunning()
+			// worker放回pool
 			w.pool.workerCache.Put(w)
 			if p := recover(); p != nil {
 				if ph := w.pool.options.PanicHandler; ph != nil {
+					// panic钩子
 					ph(p)
 				} else {
+					// 没panic钩子就打印出堆栈信息
 					w.pool.options.Logger.Printf("worker exits from a panic: %v\n", p)
 					var buf [4096]byte
 					n := runtime.Stack(buf[:], false)
@@ -60,6 +73,7 @@ func (w *goWorker) run() {
 				}
 			}
 			// Call Signal() here in case there are goroutines waiting for available workers.
+			// 发送信号，通知有可用worker
 			w.pool.cond.Signal()
 		}()
 

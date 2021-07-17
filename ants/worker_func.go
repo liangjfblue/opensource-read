@@ -27,14 +27,18 @@ import (
 	"time"
 )
 
+// 函数对象池，适用于任务处理相同的场景，减少函数任务的传递，提高性能
+
 // goWorkerWithFunc is the actual executor who runs the tasks,
 // it starts a goroutine that accepts tasks and
 // performs function calls.
 type goWorkerWithFunc struct {
 	// pool who owns this worker.
+	// 函数任务对象池
 	pool *PoolWithFunc
 
 	// args is a job should be done.
+	// 参数队列
 	args chan interface{}
 
 	// recycleTime will be update when putting a worker back into queue.
@@ -67,6 +71,7 @@ func (w *goWorkerWithFunc) run() {
 			if args == nil {
 				return
 			}
+			// 函数对象池，适用于任务处理相同的场景，减少函数任务的传递，提高性能
 			w.pool.poolFunc(args)
 			if ok := w.pool.revertWorker(w); !ok {
 				return

@@ -2,8 +2,11 @@ package ants
 
 import "time"
 
+/**
+函数选项模式
+*/
+
 // Option represents the optional function.
-// 函数选项模式
 type Option func(opts *Options)
 
 func loadOptions(options ...Option) *Options {
@@ -19,27 +22,22 @@ type Options struct {
 	// ExpiryDuration is a period for the scavenger goroutine to clean up those expired workers,
 	// the scavenger scans all workers every `ExpiryDuration` and clean up those workers that haven't been
 	// used for more than `ExpiryDuration`.
-	// worker过期时间
 	ExpiryDuration time.Duration
 
 	// PreAlloc indicates whether to make memory pre-allocation when initializing Pool.
-	// 预先申请缓存
 	PreAlloc bool
 
 	// Max number of goroutine blocking on pool.Submit.
 	// 0 (default value) means no such limit.
-	// 阻塞队列最大限制
 	MaxBlockingTasks int
 
 	// When Nonblocking is true, Pool.Submit will never be blocked.
 	// ErrPoolOverload will be returned when Pool.Submit cannot be done at once.
 	// When Nonblocking is true, MaxBlockingTasks is inoperative.
-	// 是否非阻塞
 	Nonblocking bool
 
 	// PanicHandler is used to handle panics from each worker goroutine.
 	// if nil, panics will be thrown out again from worker goroutines.
-	// 发生panic的hook
 	PanicHandler func(interface{})
 
 	// Logger is the customized logger for logging info, if it is not set,

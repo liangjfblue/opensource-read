@@ -13,6 +13,7 @@ var (
 	errQueueIsReleased = errors.New("the queue length is zero")
 )
 
+// 工作池
 type workerArray interface {
 	len() int
 	isEmpty() bool
@@ -32,8 +33,10 @@ const (
 func newWorkerArray(aType arrayType, size int) workerArray {
 	switch aType {
 	case stackType:
+		// 栈方式
 		return newWorkerStack(size)
 	case loopQueueType:
+		// 循环队列
 		return newWorkerLoopQueue(size)
 	default:
 		return newWorkerStack(size)

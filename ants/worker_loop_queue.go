@@ -2,6 +2,7 @@ package ants
 
 import "time"
 
+// 循环队列
 type loopQueue struct {
 	items  []*goWorker
 	expiry []*goWorker
@@ -87,6 +88,7 @@ func (wq *loopQueue) retrieveExpiry(duration time.Duration) []*goWorker {
 	expiryTime := time.Now().Add(-duration)
 
 	for !wq.isEmpty() {
+		// 找出所有过期的worker
 		if expiryTime.Before(wq.items[wq.head].recycleTime) {
 			break
 		}
